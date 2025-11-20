@@ -30,6 +30,9 @@ model Destination {
   distanceFromHoustonMiles Float?
   flightDurationHours      Float?
 
+  bedrooms                 Int?
+  bathrooms                Int?
+
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
 }

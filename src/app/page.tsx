@@ -19,6 +19,8 @@ type Destination = {
   nightlyCostPerPersonUsd: number | null;
   distanceFromHoustonMiles: number | null;
   flightDurationHours: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
 };
 
 type FormState = {
@@ -38,6 +40,8 @@ type FormState = {
   nightlyCostPerPersonUsd: string;
   distanceFromHoustonMiles: string;
   flightDurationHours: string;
+  bedrooms: string;
+  bathrooms: string;
 };
 
 const defaultFormState: FormState = {
@@ -56,7 +60,9 @@ const defaultFormState: FormState = {
   nightlyCostTotalUsd: "",
   nightlyCostPerPersonUsd: "",
   distanceFromHoustonMiles: "",
-  flightDurationHours: ""
+  flightDurationHours: "",
+  bedrooms: "",
+  bathrooms: ""
 };
 
 export default function HomePage() {
@@ -111,6 +117,8 @@ export default function HomePage() {
       nightlyCostPerPersonUsd: destination.nightlyCostPerPersonUsd?.toString() || "",
       distanceFromHoustonMiles: destination.distanceFromHoustonMiles?.toString() || "",
       flightDurationHours: destination.flightDurationHours?.toString() || "",
+      bedrooms: destination.bedrooms?.toString() || "",
+      bathrooms: destination.bathrooms?.toString() || "",
     });
     setEditingId(destination.id);
     setIsModalOpen(true);
@@ -441,6 +449,30 @@ export default function HomePage() {
               </div>
 
               <div className="form-field">
+                <label>Bedrooms</label>
+                <input
+                  type="number"
+                  value={form.bedrooms}
+                  onChange={(e) =>
+                    handleChange("bedrooms", e.target.value)
+                  }
+                  placeholder="e.g. 5"
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Bathrooms</label>
+                <input
+                  type="number"
+                  value={form.bathrooms}
+                  onChange={(e) =>
+                    handleChange("bathrooms", e.target.value)
+                  }
+                  placeholder="e.g. 3"
+                />
+              </div>
+
+              <div className="form-field">
                 <label>Distance from Houston (miles)</label>
                 <input
                   value={form.distanceFromHoustonMiles}
@@ -539,7 +571,9 @@ function DestinationCard({
     notes,
     distanceFromHoustonMiles,
     nightlyCostTotalUsd,
-    airportCode
+    airportCode,
+    bedrooms,
+    bathrooms
   } = destination;
 
   const typeLabel = type === "RESORT" ? "Resort" : "Airbnb / Vacation Rental";
@@ -601,6 +635,13 @@ function DestinationCard({
           </button>
         </div>
         <div className="badges-row">
+          {(bedrooms != null || bathrooms != null) && (
+            <span className="badge">
+              {bedrooms != null && `${bedrooms} bed`}
+              {bedrooms != null && bathrooms != null && " · "}
+              {bathrooms != null && `${bathrooms} bath`}
+            </span>
+          )}
           {distanceFromHoustonMiles != null && (
             <span className="badge">
               {distanceFromHoustonMiles.toFixed(0)} mi from Houston
@@ -630,6 +671,7 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
           <tr>
             <th>Destination</th>
             <th>Type</th>
+            <th>Capacity</th>
             <th>Airport / Distance</th>
             <th>Weather</th>
             <th>Cost (nightly)</th>
@@ -641,6 +683,17 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
             <tr key={d.id}>
               <td>{d.name}</td>
               <td>{d.type === "RESORT" ? "Resort" : "Vacation rental"}</td>
+              <td>
+                {(d.bedrooms != null || d.bathrooms != null) ? (
+                  <>
+                    {d.bedrooms != null && `${d.bedrooms} bed`}
+                    {d.bedrooms != null && d.bathrooms != null && " · "}
+                    {d.bathrooms != null && `${d.bathrooms} bath`}
+                  </>
+                ) : (
+                  <span style={{ color: "#9ca3af" }}>—</span>
+                )}
+              </td>
               <td>
                 {d.airportCode && <div>{d.airportCode.toUpperCase()}</div>}
                 {(d.distanceFromAirportMiles != null ||

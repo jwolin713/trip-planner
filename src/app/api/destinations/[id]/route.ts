@@ -28,7 +28,9 @@ export async function PUT(
       nightlyCostTotalUsd,
       nightlyCostPerPersonUsd,
       distanceFromHoustonMiles,
-      flightDurationHours
+      flightDurationHours,
+      bedrooms,
+      bathrooms
     } = body;
 
     if (!name || !type) {
@@ -102,6 +104,18 @@ export async function PUT(
             ? flightDurationHours
             : flightDurationHours
             ? parseFloat(flightDurationHours)
+            : null,
+        bedrooms:
+          typeof bedrooms === "number"
+            ? bedrooms
+            : bedrooms
+            ? parseInt(bedrooms, 10)
+            : null,
+        bathrooms:
+          typeof bathrooms === "number"
+            ? bathrooms
+            : bathrooms
+            ? parseInt(bathrooms, 10)
             : null
       }
     });
