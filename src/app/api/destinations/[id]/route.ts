@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const dynamicParams = true;
+export const revalidate = 0;
 
 export async function PUT(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
-    const { id } = context.params;
+    const { id } = params;
 
     const {
       name,
@@ -117,10 +118,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = params;
 
     await prisma.destination.delete({
       where: { id }
