@@ -116,6 +116,30 @@ export default function HomePage() {
     setIsModalOpen(true);
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("Are you sure you want to delete this destination?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/destinations/${id}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.error || "Failed to delete destination.");
+        return;
+      }
+
+      // Refresh the destinations list
+      await fetchDestinations();
+    } catch (err) {
+      console.error(err);
+      alert("Unexpected error while deleting destination.");
+    }
+  }
+
   async function handleLookup() {
     if (!form.address.trim()) {
       setError("Please enter an address first.");
@@ -471,7 +495,12 @@ export default function HomePage() {
             ) : (
               <div className="cards-grid">
                 {destinations.map((d) => (
-                  <DestinationCard key={d.id} destination={d} onEdit={handleEdit} />
+                  <DestinationCard
+                    key={d.id}
+                    destination={d}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             )}
@@ -495,10 +524,12 @@ export default function HomePage() {
 
 function DestinationCard({
   destination,
-  onEdit
+  onEdit,
+  onDelete
 }: {
   destination: Destination;
   onEdit: (destination: Destination) => void;
+  onDelete: (id: string) => void;
 }) {
   const {
     name,
@@ -537,22 +568,38 @@ function DestinationCard({
           )}
         </div>
         {notes && <p className="destination-notes">{notes}</p>}
-        <button
-          onClick={() => onEdit(destination)}
-          style={{
-            marginTop: 8,
-            padding: "4px 8px",
-            fontSize: "0.7rem",
-            borderRadius: "4px",
-            border: "1px solid #d1d5db",
-            background: "transparent",
-            color: "#6b7280",
-            cursor: "pointer",
-            width: "100%"
-          }}
-        >
-          Edit
-        </button>
+        <div style={{ display: "flex", gap: "8px", marginTop: 8 }}>
+          <button
+            onClick={() => onEdit(destination)}
+            style={{
+              flex: 1,
+              padding: "4px 8px",
+              fontSize: "0.7rem",
+              borderRadius: "4px",
+              border: "1px solid #d1d5db",
+              background: "transparent",
+              color: "#6b7280",
+              cursor: "pointer"
+            }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => onDelete(destination.id)}
+            style={{
+              flex: 1,
+              padding: "4px 8px",
+              fontSize: "0.7rem",
+              borderRadius: "4px",
+              border: "1px solid #dc2626",
+              background: "transparent",
+              color: "#dc2626",
+              cursor: "pointer"
+            }}
+          >
+            Delete
+          </button>
+        </div>
         <div className="badges-row">
           {distanceFromHoustonMiles != null && (
             <span className="badge">
