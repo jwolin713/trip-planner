@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Destination {
+  id                       String           @id @default(cuid())
+  name                     String
+  type                     String
+
+  imageUrl                 String?
+  propertyUrl              String?
+  notes                    String?
+
+  airportCode              String?
+  distanceFromAirportMiles Float?
+  driveTimeFromAirportMin  Int?
+
+  avgHighTempF             Float?
+  avgLowTempF              Float?
+  weatherSummary           String?
+
+  nightlyCostTotalUsd      Float?
+  nightlyCostPerPersonUsd  Float?
+
+  distanceFromHoustonMiles Float?
+  flightDurationHours      Float?
+
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+}

@@ -1,0 +1,306 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0b1120;
+  color: #e5e7eb;
+}
+
+.app-root {
+  min-height: 100vh;
+  padding: 24px;
+}
+
+a {
+  color: #93c5fd;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.app-header {
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  font-size: 2rem;
+  margin: 0 0 8px 0;
+}
+
+.app-header p {
+  margin: 0;
+  color: #9ca3af;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form styles */
+
+.card {
+  background: #020617;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #1f2937;
+}
+
+.card-header {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.card-header span {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  border-radius: 8px;
+  border: 1px solid #374151;
+  padding: 8px 10px;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.button-primary {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  background: #22c55e;
+  color: #022c22;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Destination cards */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.destination-card {
+  background: #020617;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #1f2937;
+  display: flex;
+  flex-direction: column;
+}
+
+.destination-image {
+  position: relative;
+  height: 140px;
+  background: linear-gradient(135deg, #0ea5e9, #22c55e);
+}
+
+.destination-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.destination-tag {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 0.7rem;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.destination-content {
+  padding: 10px 12px 12px 12px;
+}
+
+.destination-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.destination-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.destination-notes {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid #374151;
+  color: #9ca3af;
+}
+
+.badges-row {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Table */
+
+.table-wrapper {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.comparison-table thead {
+  background: #020617;
+}
+
+.comparison-table th,
+.comparison-table td {
+  border: 1px solid #1f2937;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.comparison-table th {
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.comparison-table tbody tr:nth-child(even) {
+  background: #020617;
+}
+
+/* Modal */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-content {
+  background: #020617;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.modal-close:hover {
+  background: #1f2937;
+  color: #e5e7eb;
+}
