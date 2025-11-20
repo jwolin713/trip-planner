@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 // Major airports in the US and popular destinations
 const MAJOR_AIRPORTS = [
   // Texas
