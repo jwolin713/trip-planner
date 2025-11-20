@@ -204,7 +204,7 @@ export default function HomePage() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Group Trip Destinations</h1>
+        <h1>Coalition Con 2026 Destinations</h1>
         <p>
           Add ideas, see them as cards, and compare tradeoffs side by side for our group of 15.
         </p>
@@ -246,11 +246,11 @@ export default function HomePage() {
                 ×
               </button>
             </div>
-            <p style={{ color: "#9ca3af", fontSize: "0.8rem", marginBottom: 16 }}>
+            <p style={{ color: "#6b7280", fontSize: "0.8rem", marginBottom: 16 }}>
               Enter rough estimates; we can refine later.
             </p>
             {error && (
-              <p style={{ color: "#f97373", fontSize: "0.8rem", marginBottom: 8 }}>
+              <p style={{ color: "#dc2626", fontSize: "0.8rem", marginBottom: 8 }}>
                 {error}
               </p>
             )}
@@ -461,11 +461,11 @@ export default function HomePage() {
               </span>
             </div>
             {loading ? (
-              <p style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
+              <p style={{ fontSize: "0.9rem", color: "#6b7280" }}>
                 Loading destinations...
               </p>
             ) : destinations.length === 0 ? (
-              <p style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
+              <p style={{ fontSize: "0.9rem", color: "#6b7280" }}>
                 No destinations yet. Click "Add destination" to get started.
               </p>
             ) : (
@@ -544,9 +544,9 @@ function DestinationCard({
             padding: "4px 8px",
             fontSize: "0.7rem",
             borderRadius: "4px",
-            border: "1px solid #374151",
+            border: "1px solid #d1d5db",
             background: "transparent",
-            color: "#9ca3af",
+            color: "#6b7280",
             cursor: "pointer",
             width: "100%"
           }}
@@ -598,7 +598,7 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
                 {d.airportCode && <div>{d.airportCode.toUpperCase()}</div>}
                 {(d.distanceFromAirportMiles != null ||
                   d.driveTimeFromAirportMin != null) && (
-                  <div style={{ color: "#9ca3af" }}>
+                  <div style={{ color: "#6b7280" }}>
                     {d.distanceFromAirportMiles != null &&
                       `${d.distanceFromAirportMiles.toFixed(0)} mi`}
                     {d.distanceFromAirportMiles != null &&
@@ -620,7 +620,7 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
                   </div>
                 )}
                 {d.weatherSummary && (
-                  <div style={{ color: "#9ca3af" }}>{d.weatherSummary}</div>
+                  <div style={{ color: "#6b7280" }}>{d.weatherSummary}</div>
                 )}
               </td>
               <td>
@@ -630,7 +630,7 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
                   </div>
                 )}
                 {d.nightlyCostPerPersonUsd != null && (
-                  <div style={{ color: "#9ca3af" }}>
+                  <div style={{ color: "#6b7280" }}>
                     ${d.nightlyCostPerPersonUsd.toFixed(0)} / person
                   </div>
                 )}
@@ -640,12 +640,12 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
                   <div>{d.distanceFromHoustonMiles.toFixed(0)} mi</div>
                 )}
                 {d.flightDurationHours != null && d.flightDurationHours > 0 && (
-                  <div style={{ color: "#9ca3af" }}>
+                  <div style={{ color: "#6b7280" }}>
                     ~{d.flightDurationHours.toFixed(1)} h flight
                   </div>
                 )}
                 {d.flightDurationHours === 0 && (
-                  <div style={{ color: "#9ca3af" }}>Drive from Houston</div>
+                  <div style={{ color: "#6b7280" }}>Drive from Houston</div>
                 )}
               </td>
             </tr>
