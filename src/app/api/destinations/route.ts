@@ -30,6 +30,8 @@ export async function POST(request: Request) {
       nightlyCostPerPersonUsd,
       distanceFromHoustonMiles,
       flightDurationHours,
+      distanceFromBostonMiles,
+      flightDurationFromBostonHours,
       bedrooms,
       bathrooms
     } = body;
@@ -104,6 +106,18 @@ export async function POST(request: Request) {
             ? flightDurationHours
             : flightDurationHours
             ? parseFloat(flightDurationHours)
+            : null,
+        distanceFromBostonMiles:
+          typeof distanceFromBostonMiles === "number"
+            ? distanceFromBostonMiles
+            : distanceFromBostonMiles
+            ? parseFloat(distanceFromBostonMiles)
+            : null,
+        flightDurationFromBostonHours:
+          typeof flightDurationFromBostonHours === "number"
+            ? flightDurationFromBostonHours
+            : flightDurationFromBostonHours
+            ? parseFloat(flightDurationFromBostonHours)
             : null,
         bedrooms:
           typeof bedrooms === "number"

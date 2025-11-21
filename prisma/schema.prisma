@@ -30,6 +30,9 @@ model Destination {
   distanceFromHoustonMiles Float?
   flightDurationHours      Float?
 
+  distanceFromBostonMiles  Float?
+  flightDurationFromBostonHours Float?
+
   bedrooms                 Int?
   bathrooms                Int?
 

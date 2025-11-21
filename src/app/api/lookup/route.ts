@@ -131,6 +131,9 @@ const MAJOR_AIRPORTS = [
 const HOUSTON_LAT = 29.7604;
 const HOUSTON_LON = -95.3698;
 
+const BOSTON_LAT = 42.3601;
+const BOSTON_LON = -71.0589;
+
 // Calculate distance between two coordinates in miles
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 3959; // Earth's radius in miles
@@ -216,9 +219,12 @@ export async function POST(request: Request) {
     const { airport, distance: distanceFromAirport } = findNearestAirport(lat, lon);
     const driveTimeFromAirport = estimateDriveTime(distanceFromAirport);
 
-    // 3. Calculate distance from Houston
+    // 3. Calculate distance from Houston and Boston
     const distanceFromHouston = calculateDistance(HOUSTON_LAT, HOUSTON_LON, lat, lon);
     const flightDuration = estimateFlightDuration(distanceFromHouston);
+
+    const distanceFromBoston = calculateDistance(BOSTON_LAT, BOSTON_LON, lat, lon);
+    const flightDurationFromBoston = estimateFlightDuration(distanceFromBoston);
 
     // 4. Get weather data using Open-Meteo API
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
@@ -256,6 +262,8 @@ export async function POST(request: Request) {
       weatherSummary,
       distanceFromHoustonMiles: Math.round(distanceFromHouston),
       flightDurationHours: Math.round(flightDuration * 10) / 10, // Round to 1 decimal
+      distanceFromBostonMiles: Math.round(distanceFromBoston),
+      flightDurationFromBostonHours: Math.round(flightDurationFromBoston * 10) / 10, // Round to 1 decimal
     });
   } catch (err) {
     console.error(err);

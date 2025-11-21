@@ -19,6 +19,8 @@ type Destination = {
   nightlyCostPerPersonUsd: number | null;
   distanceFromHoustonMiles: number | null;
   flightDurationHours: number | null;
+  distanceFromBostonMiles: number | null;
+  flightDurationFromBostonHours: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
 };
@@ -40,6 +42,8 @@ type FormState = {
   nightlyCostPerPersonUsd: string;
   distanceFromHoustonMiles: string;
   flightDurationHours: string;
+  distanceFromBostonMiles: string;
+  flightDurationFromBostonHours: string;
   bedrooms: string;
   bathrooms: string;
 };
@@ -61,6 +65,8 @@ const defaultFormState: FormState = {
   nightlyCostPerPersonUsd: "",
   distanceFromHoustonMiles: "",
   flightDurationHours: "",
+  distanceFromBostonMiles: "",
+  flightDurationFromBostonHours: "",
   bedrooms: "",
   bathrooms: ""
 };
@@ -117,6 +123,8 @@ export default function HomePage() {
       nightlyCostPerPersonUsd: destination.nightlyCostPerPersonUsd?.toString() || "",
       distanceFromHoustonMiles: destination.distanceFromHoustonMiles?.toString() || "",
       flightDurationHours: destination.flightDurationHours?.toString() || "",
+      distanceFromBostonMiles: destination.distanceFromBostonMiles?.toString() || "",
+      flightDurationFromBostonHours: destination.flightDurationFromBostonHours?.toString() || "",
       bedrooms: destination.bedrooms?.toString() || "",
       bathrooms: destination.bathrooms?.toString() || "",
     });
@@ -180,7 +188,9 @@ export default function HomePage() {
           avgLowTempF: data.avgLowTempF?.toString() || prev.avgLowTempF,
           weatherSummary: data.weatherSummary || prev.weatherSummary,
           distanceFromHoustonMiles: data.distanceFromHoustonMiles?.toString() || prev.distanceFromHoustonMiles,
-          flightDurationHours: data.flightDurationHours?.toString() || prev.flightDurationHours
+          flightDurationHours: data.flightDurationHours?.toString() || prev.flightDurationHours,
+          distanceFromBostonMiles: data.distanceFromBostonMiles?.toString() || prev.distanceFromBostonMiles,
+          flightDurationFromBostonHours: data.flightDurationFromBostonHours?.toString() || prev.flightDurationFromBostonHours
         }));
       }
     } catch (err) {
@@ -484,13 +494,35 @@ export default function HomePage() {
               </div>
 
               <div className="form-field">
-                <label>Flight duration (hours)</label>
+                <label>Flight duration from Houston (hours)</label>
                 <input
                   value={form.flightDurationHours}
                   onChange={(e) =>
                     handleChange("flightDurationHours", e.target.value)
                   }
                   placeholder="e.g. 2.5"
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Distance from Boston (miles)</label>
+                <input
+                  value={form.distanceFromBostonMiles}
+                  onChange={(e) =>
+                    handleChange("distanceFromBostonMiles", e.target.value)
+                  }
+                  placeholder="e.g. 1500"
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Flight duration from Boston (hours)</label>
+                <input
+                  value={form.flightDurationFromBostonHours}
+                  onChange={(e) =>
+                    handleChange("flightDurationFromBostonHours", e.target.value)
+                  }
+                  placeholder="e.g. 4.5"
                 />
               </div>
               </div>
@@ -569,7 +601,8 @@ function DestinationCard({
     imageUrl,
     propertyUrl,
     notes,
-    distanceFromHoustonMiles,
+    flightDurationHours,
+    flightDurationFromBostonHours,
     nightlyCostTotalUsd,
     airportCode,
     bedrooms,
@@ -642,9 +675,14 @@ function DestinationCard({
               {bathrooms != null && `${bathrooms} bath`}
             </span>
           )}
-          {distanceFromHoustonMiles != null && (
+          {flightDurationHours != null && flightDurationHours > 0 && (
             <span className="badge">
-              {distanceFromHoustonMiles.toFixed(0)} mi from Houston
+              {flightDurationHours.toFixed(1)}h from Houston
+            </span>
+          )}
+          {flightDurationFromBostonHours != null && flightDurationFromBostonHours > 0 && (
+            <span className="badge">
+              {flightDurationFromBostonHours.toFixed(1)}h from Boston
             </span>
           )}
           {nightlyCostTotalUsd != null && (
@@ -675,7 +713,7 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
             <th>Airport / Distance</th>
             <th>Weather</th>
             <th>Cost (nightly)</th>
-            <th>From Houston</th>
+            <th>Travel Time</th>
           </tr>
         </thead>
         <tbody>
@@ -736,16 +774,21 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
                 )}
               </td>
               <td>
-                {d.distanceFromHoustonMiles != null && (
-                  <div>{d.distanceFromHoustonMiles.toFixed(0)} mi</div>
-                )}
                 {d.flightDurationHours != null && d.flightDurationHours > 0 && (
-                  <div style={{ color: "#6b7280" }}>
-                    ~{d.flightDurationHours.toFixed(1)} h flight
+                  <div>
+                    {d.flightDurationHours.toFixed(1)}h from Houston
                   </div>
                 )}
                 {d.flightDurationHours === 0 && (
-                  <div style={{ color: "#6b7280" }}>Drive from Houston</div>
+                  <div>Drive from Houston</div>
+                )}
+                {d.flightDurationFromBostonHours != null && d.flightDurationFromBostonHours > 0 && (
+                  <div style={{ color: "#6b7280" }}>
+                    {d.flightDurationFromBostonHours.toFixed(1)}h from Boston
+                  </div>
+                )}
+                {d.flightDurationFromBostonHours === 0 && (
+                  <div style={{ color: "#6b7280" }}>Drive from Boston</div>
                 )}
               </td>
             </tr>
