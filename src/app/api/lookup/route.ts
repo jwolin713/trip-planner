@@ -226,8 +226,9 @@ export async function POST(request: Request) {
     const distanceFromBoston = calculateDistance(BOSTON_LAT, BOSTON_LON, lat, lon);
     const flightDurationFromBoston = estimateFlightDuration(distanceFromBoston);
 
-    // 4. Get weather data using Open-Meteo API
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
+    // 4. Get weather data for early August using Open-Meteo Archive API
+    // Query historical data from August 1-10 for recent years (2023 and 2024)
+    const weatherUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=2023-08-01&end_date=2024-08-10&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto`;
 
     const weatherRes = await fetch(weatherUrl);
     let avgHighTempF = null;
@@ -236,19 +237,27 @@ export async function POST(request: Request) {
 
     if (weatherRes.ok) {
       const weatherData = await weatherRes.json();
-      if (weatherData.daily) {
-        avgHighTempF = Math.round(weatherData.daily.temperature_2m_max[0]);
-        avgLowTempF = Math.round(weatherData.daily.temperature_2m_min[0]);
+      if (weatherData.daily && weatherData.daily.temperature_2m_max.length > 0) {
+        // Calculate average high and low temperatures across early August from multiple years
+        const highs = weatherData.daily.temperature_2m_max.filter((temp: number | null) => temp !== null);
+        const lows = weatherData.daily.temperature_2m_min.filter((temp: number | null) => temp !== null);
 
-        // Generate a simple weather summary
-        if (avgHighTempF > 85) {
-          weatherSummary = "Hot and sunny, typical of warm climate destinations.";
-        } else if (avgHighTempF > 70) {
-          weatherSummary = "Warm and pleasant, ideal for outdoor activities.";
-        } else if (avgHighTempF > 50) {
-          weatherSummary = "Mild temperatures, comfortable year-round.";
-        } else {
-          weatherSummary = "Cool climate, bring layers for comfort.";
+        if (highs.length > 0) {
+          avgHighTempF = Math.round(highs.reduce((sum: number, temp: number) => sum + temp, 0) / highs.length);
+        }
+        if (lows.length > 0) {
+          avgLowTempF = Math.round(lows.reduce((sum: number, temp: number) => sum + temp, 0) / lows.length);
+        }
+
+        // Generate a simple weather summary based on early August climate
+        if (avgHighTempF && avgHighTempF > 85) {
+          weatherSummary = "Hot and sunny in early August, typical of warm climate destinations.";
+        } else if (avgHighTempF && avgHighTempF > 70) {
+          weatherSummary = "Warm and pleasant in early August, ideal for outdoor activities.";
+        } else if (avgHighTempF && avgHighTempF > 50) {
+          weatherSummary = "Mild temperatures in early August, comfortable climate.";
+        } else if (avgHighTempF) {
+          weatherSummary = "Cool climate in early August, bring layers for comfort.";
         }
       }
     }
