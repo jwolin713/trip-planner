@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
-// Major airports in the US and popular destinations
+// Major airports with coordinates (same as in lookup route)
 const MAJOR_AIRPORTS = [
   // Texas
   { code: "IAH", name: "Houston (IAH)", lat: 29.9844, lon: -95.3414 },
@@ -128,156 +129,133 @@ const MAJOR_AIRPORTS = [
   { code: "YUL", name: "Montreal", lat: 45.4657, lon: -73.7455 },
 ];
 
-const HOUSTON_LAT = 29.7604;
-const HOUSTON_LON = -95.3698;
+async function fetchAugustWeather(lat: number, lon: number) {
+  const weatherUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=2023-08-01&end_date=2024-08-10&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto`;
 
-const BOSTON_LAT = 42.3601;
-const BOSTON_LON = -71.0589;
+  const weatherRes = await fetch(weatherUrl);
 
-// Calculate distance between two coordinates in miles
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3959; // Earth's radius in miles
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Find nearest airport
-function findNearestAirport(lat: number, lon: number) {
-  let nearest = MAJOR_AIRPORTS[0];
-  let minDistance = calculateDistance(lat, lon, nearest.lat, nearest.lon);
-
-  for (const airport of MAJOR_AIRPORTS) {
-    const distance = calculateDistance(lat, lon, airport.lat, airport.lon);
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearest = airport;
-    }
+  if (!weatherRes.ok) {
+    throw new Error(`Weather API request failed: ${weatherRes.status}`);
   }
 
-  return { airport: nearest, distance: minDistance };
+  const weatherData = await weatherRes.json();
+
+  if (!weatherData.daily || weatherData.daily.temperature_2m_max.length === 0) {
+    return null;
+  }
+
+  // Calculate average high and low temperatures across early August from multiple years
+  const highs = weatherData.daily.temperature_2m_max.filter((temp: number | null) => temp !== null);
+  const lows = weatherData.daily.temperature_2m_min.filter((temp: number | null) => temp !== null);
+
+  let avgHighTempF = null;
+  let avgLowTempF = null;
+  let weatherSummary = null;
+
+  if (highs.length > 0) {
+    avgHighTempF = Math.round(highs.reduce((sum: number, temp: number) => sum + temp, 0) / highs.length);
+  }
+  if (lows.length > 0) {
+    avgLowTempF = Math.round(lows.reduce((sum: number, temp: number) => sum + temp, 0) / lows.length);
+  }
+
+  // Generate a simple weather summary based on early August climate
+  if (avgHighTempF && avgHighTempF > 85) {
+    weatherSummary = "Hot and sunny in early August, typical of warm climate destinations.";
+  } else if (avgHighTempF && avgHighTempF > 70) {
+    weatherSummary = "Warm and pleasant in early August, ideal for outdoor activities.";
+  } else if (avgHighTempF && avgHighTempF > 50) {
+    weatherSummary = "Mild temperatures in early August, comfortable climate.";
+  } else if (avgHighTempF) {
+    weatherSummary = "Cool climate in early August, bring layers for comfort.";
+  }
+
+  return { avgHighTempF, avgLowTempF, weatherSummary };
 }
 
-// Estimate drive time based on distance (rough average of 45 mph)
-function estimateDriveTime(miles: number): number {
-  return Math.round(miles / 45 * 60); // Convert to minutes
-}
-
-// Estimate flight duration based on distance (rough average of 500 mph)
-function estimateFlightDuration(miles: number): number {
-  return miles / 500; // Return in hours
-}
-
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const { address } = body;
+    const destinations = await prisma.destination.findMany();
 
-    if (!address) {
-      return NextResponse.json(
-        { error: "Address is required." },
-        { status: 400 }
+    const results = {
+      total: destinations.length,
+      updated: 0,
+      skipped: 0,
+      errors: 0,
+      details: [] as Array<{ name: string; status: string; message: string }>,
+    };
+
+    for (const destination of destinations) {
+      if (!destination.airportCode) {
+        results.skipped++;
+        results.details.push({
+          name: destination.name,
+          status: "skipped",
+          message: "No airport code",
+        });
+        continue;
+      }
+
+      const airport = MAJOR_AIRPORTS.find(
+        (a) => a.code.toUpperCase() === destination.airportCode?.toUpperCase()
       );
-    }
 
-    // 1. Geocode the address using Nominatim (OpenStreetMap)
-    const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      address
-    )}&format=json&limit=1`;
+      if (!airport) {
+        results.skipped++;
+        results.details.push({
+          name: destination.name,
+          status: "skipped",
+          message: `Airport ${destination.airportCode} not found`,
+        });
+        continue;
+      }
 
-    const geocodeRes = await fetch(geocodeUrl, {
-      headers: {
-        "User-Agent": "TripPlanner/1.0",
-      },
-    });
+      try {
+        const weatherData = await fetchAugustWeather(airport.lat, airport.lon);
 
-    if (!geocodeRes.ok) {
-      return NextResponse.json(
-        { error: "Failed to geocode address." },
-        { status: 500 }
-      );
-    }
-
-    const geocodeData = await geocodeRes.json();
-
-    if (!geocodeData || geocodeData.length === 0) {
-      return NextResponse.json(
-        { error: "Address not found. Please try a different address." },
-        { status: 404 }
-      );
-    }
-
-    const lat = parseFloat(geocodeData[0].lat);
-    const lon = parseFloat(geocodeData[0].lon);
-
-    // 2. Find nearest airport
-    const { airport, distance: distanceFromAirport } = findNearestAirport(lat, lon);
-    const driveTimeFromAirport = estimateDriveTime(distanceFromAirport);
-
-    // 3. Calculate distance from Houston and Boston
-    const distanceFromHouston = calculateDistance(HOUSTON_LAT, HOUSTON_LON, lat, lon);
-    const flightDuration = estimateFlightDuration(distanceFromHouston);
-
-    const distanceFromBoston = calculateDistance(BOSTON_LAT, BOSTON_LON, lat, lon);
-    const flightDurationFromBoston = estimateFlightDuration(distanceFromBoston);
-
-    // 4. Get weather data for early August using Open-Meteo Archive API
-    // Query historical data from August 1-10 for recent years (2023 and 2024)
-    const weatherUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=2023-08-01&end_date=2024-08-10&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto`;
-
-    const weatherRes = await fetch(weatherUrl);
-    let avgHighTempF = null;
-    let avgLowTempF = null;
-    let weatherSummary = null;
-
-    if (weatherRes.ok) {
-      const weatherData = await weatherRes.json();
-      if (weatherData.daily && weatherData.daily.temperature_2m_max.length > 0) {
-        // Calculate average high and low temperatures across early August from multiple years
-        const highs = weatherData.daily.temperature_2m_max.filter((temp: number | null) => temp !== null);
-        const lows = weatherData.daily.temperature_2m_min.filter((temp: number | null) => temp !== null);
-
-        if (highs.length > 0) {
-          avgHighTempF = Math.round(highs.reduce((sum: number, temp: number) => sum + temp, 0) / highs.length);
-        }
-        if (lows.length > 0) {
-          avgLowTempF = Math.round(lows.reduce((sum: number, temp: number) => sum + temp, 0) / lows.length);
+        if (!weatherData) {
+          results.errors++;
+          results.details.push({
+            name: destination.name,
+            status: "error",
+            message: "No weather data available",
+          });
+          continue;
         }
 
-        // Generate a simple weather summary based on early August climate
-        if (avgHighTempF && avgHighTempF > 85) {
-          weatherSummary = "Hot and sunny in early August, typical of warm climate destinations.";
-        } else if (avgHighTempF && avgHighTempF > 70) {
-          weatherSummary = "Warm and pleasant in early August, ideal for outdoor activities.";
-        } else if (avgHighTempF && avgHighTempF > 50) {
-          weatherSummary = "Mild temperatures in early August, comfortable climate.";
-        } else if (avgHighTempF) {
-          weatherSummary = "Cool climate in early August, bring layers for comfort.";
-        }
+        await prisma.destination.update({
+          where: { id: destination.id },
+          data: {
+            avgHighTempF: weatherData.avgHighTempF,
+            avgLowTempF: weatherData.avgLowTempF,
+            weatherSummary: weatherData.weatherSummary,
+          },
+        });
+
+        results.updated++;
+        results.details.push({
+          name: destination.name,
+          status: "updated",
+          message: `High ${weatherData.avgHighTempF}°F, Low ${weatherData.avgLowTempF}°F`,
+        });
+
+        // Add a small delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } catch (error) {
+        results.errors++;
+        results.details.push({
+          name: destination.name,
+          status: "error",
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
       }
     }
 
-    return NextResponse.json({
-      airportCode: airport.code,
-      distanceFromAirportMiles: Math.round(distanceFromAirport),
-      driveTimeFromAirportMin: driveTimeFromAirport,
-      avgHighTempF,
-      avgLowTempF,
-      weatherSummary,
-      distanceFromHoustonMiles: Math.round(distanceFromHouston),
-      flightDurationHours: Math.round(flightDuration * 10) / 10, // Round to 1 decimal
-      distanceFromBostonMiles: Math.round(distanceFromBoston),
-      flightDurationFromBostonHours: Math.round(flightDurationFromBoston * 10) / 10, // Round to 1 decimal
-    });
+    return NextResponse.json(results);
   } catch (err) {
     console.error(err);
     return NextResponse.json(
-      { error: "Failed to lookup location details." },
+      { error: "Failed to update weather data." },
       { status: 500 }
     );
   }
