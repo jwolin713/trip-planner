@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import { getOrCreateVoterId } from "@/lib/voter";
 
 type Destination = {
   id: string;
@@ -23,6 +24,10 @@ type Destination = {
   flightDurationFromBostonHours: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  voteCount: number;
+  hasVoted: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type FormState = {
@@ -80,10 +85,13 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [voterId, setVoterId] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"recent" | "votes" | "name">("recent");
 
   async function fetchDestinations() {
     setLoading(true);
-    const res = await fetch("/api/destinations");
+    const voterIdParam = voterId ? `?voterId=${voterId}` : "";
+    const res = await fetch(`/api/destinations${voterIdParam}`);
     if (!res.ok) {
       setError("Failed to load destinations.");
       setLoading(false);
@@ -95,8 +103,16 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    fetchDestinations();
+    // Initialize voter ID
+    const id = getOrCreateVoterId();
+    setVoterId(id);
   }, []);
+
+  useEffect(() => {
+    if (voterId) {
+      fetchDestinations();
+    }
+  }, [voterId]);
 
   function handleChange(
     field: keyof FormState,
@@ -242,6 +258,66 @@ export default function HomePage() {
       setSaving(false);
     }
   }
+
+  async function handleVote(destinationId: string) {
+    if (!voterId) return;
+
+    try {
+      // Optimistic update
+      setDestinations((prev) =>
+        prev.map((d) => {
+          if (d.id === destinationId) {
+            return {
+              ...d,
+              hasVoted: !d.hasVoted,
+              voteCount: d.hasVoted ? d.voteCount - 1 : d.voteCount + 1,
+            };
+          }
+          return d;
+        })
+      );
+
+      const res = await fetch(`/api/destinations/${destinationId}/vote`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ voterId }),
+      });
+
+      if (!res.ok) {
+        // Revert optimistic update on error
+        await fetchDestinations();
+        console.error("Failed to vote");
+      } else {
+        const data = await res.json();
+        // Update with server response
+        setDestinations((prev) =>
+          prev.map((d) => {
+            if (d.id === destinationId) {
+              return {
+                ...d,
+                hasVoted: data.hasVoted,
+                voteCount: data.voteCount,
+              };
+            }
+            return d;
+          })
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      // Revert optimistic update on error
+      await fetchDestinations();
+    }
+  }
+
+  // Sort destinations based on selected option
+  const sortedDestinations = [...destinations].sort((a, b) => {
+    if (sortBy === "votes") return b.voteCount - a.voteCount;
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
     <div className="app-container">
@@ -548,6 +624,31 @@ export default function HomePage() {
                 Cards for vibe, table for side-by-side tradeoffs.
               </span>
             </div>
+
+            {/* Sort dropdown */}
+            {destinations.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <label htmlFor="sort-select" style={{ marginRight: 8, fontSize: "0.9rem", color: "#6b7280" }}>
+                  Sort by:
+                </label>
+                <select
+                  id="sort-select"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "recent" | "votes" | "name")}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "0.9rem",
+                    borderRadius: "4px",
+                    border: "1px solid #d1d5db",
+                  }}
+                >
+                  <option value="votes">Most votes</option>
+                  <option value="recent">Most recent</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+              </div>
+            )}
+
             {loading ? (
               <p style={{ fontSize: "0.9rem", color: "#6b7280" }}>
                 Loading destinations...
@@ -558,12 +659,13 @@ export default function HomePage() {
               </p>
             ) : (
               <div className="cards-grid">
-                {destinations.map((d) => (
+                {sortedDestinations.map((d) => (
                   <DestinationCard
                     key={d.id}
                     destination={d}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onVote={handleVote}
                   />
                 ))}
               </div>
@@ -578,7 +680,7 @@ export default function HomePage() {
                   Scan costs, distance, and weather for all options.
                 </span>
               </div>
-              <ComparisonTable destinations={destinations} />
+              <ComparisonTable destinations={sortedDestinations} onVote={handleVote} />
             </div>
           )}
       </section>
@@ -589,11 +691,13 @@ export default function HomePage() {
 function DestinationCard({
   destination,
   onEdit,
-  onDelete
+  onDelete,
+  onVote
 }: {
   destination: Destination;
   onEdit: (destination: Destination) => void;
   onDelete: (id: string) => void;
+  onVote: (id: string) => void;
 }) {
   const {
     name,
@@ -606,7 +710,9 @@ function DestinationCard({
     nightlyCostTotalUsd,
     airportCode,
     bedrooms,
-    bathrooms
+    bathrooms,
+    voteCount,
+    hasVoted
   } = destination;
 
   const typeLabel = type === "RESORT" ? "Resort" : "Airbnb / Vacation Rental";
@@ -635,6 +741,32 @@ function DestinationCard({
           )}
         </div>
         {notes && <p className="destination-notes">{notes}</p>}
+
+        {/* Vote button */}
+        <div style={{ marginTop: 8, marginBottom: 8 }}>
+          <button
+            onClick={() => onVote(destination.id)}
+            style={{
+              padding: "6px 12px",
+              fontSize: "0.85rem",
+              borderRadius: "6px",
+              border: hasVoted ? "2px solid #2563eb" : "2px solid #d1d5db",
+              background: hasVoted ? "#eff6ff" : "white",
+              color: hasVoted ? "#2563eb" : "#6b7280",
+              cursor: "pointer",
+              fontWeight: hasVoted ? "600" : "normal",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+            aria-label={hasVoted ? "Remove vote" : "Vote for this destination"}
+          >
+            <span style={{ fontSize: "1rem" }}>⬆</span>
+            <span>{voteCount} {voteCount === 1 ? "vote" : "votes"}</span>
+          </button>
+        </div>
+
         <div style={{ display: "flex", gap: "8px", marginTop: 8 }}>
           <button
             onClick={() => onEdit(destination)}
@@ -701,12 +833,13 @@ function DestinationCard({
   );
 }
 
-function ComparisonTable({ destinations }: { destinations: Destination[] }) {
+function ComparisonTable({ destinations, onVote }: { destinations: Destination[], onVote: (id: string) => void }) {
   return (
     <div className="table-wrapper">
       <table className="comparison-table">
         <thead>
           <tr>
+            <th>Votes</th>
             <th>Destination</th>
             <th>Type</th>
             <th>Capacity</th>
@@ -719,6 +852,25 @@ function ComparisonTable({ destinations }: { destinations: Destination[] }) {
         <tbody>
           {destinations.map((d) => (
             <tr key={d.id}>
+              <td>
+                <button
+                  onClick={() => onVote(d.id)}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    borderRadius: "4px",
+                    border: d.hasVoted ? "2px solid #2563eb" : "2px solid #d1d5db",
+                    background: d.hasVoted ? "#eff6ff" : "white",
+                    color: d.hasVoted ? "#2563eb" : "#6b7280",
+                    cursor: "pointer",
+                    fontWeight: d.hasVoted ? "600" : "normal",
+                    whiteSpace: "nowrap",
+                  }}
+                  aria-label={d.hasVoted ? "Remove vote" : "Vote for this destination"}
+                >
+                  ⬆ {d.voteCount}
+                </button>
+              </td>
               <td>{d.name}</td>
               <td>{d.type === "RESORT" ? "Resort" : "Vacation rental"}</td>
               <td>
