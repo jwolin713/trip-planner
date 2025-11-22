@@ -7,30 +7,48 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const voterId = searchParams.get("voterId");
 
-  const destinations = await prisma.destination.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      votes: voterId ? {
-        where: { voterId },
-        select: { id: true }
-      } : false,
-      _count: {
-        select: { votes: true }
+  try {
+    const destinations = await prisma.destination.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        votes: voterId ? {
+          where: { voterId },
+          select: { id: true }
+        } : false,
+        _count: {
+          select: { votes: true }
+        }
       }
-    }
-  });
+    });
 
-  // Transform the response to include voteCount and hasVoted
-  const destinationsWithVotes = destinations.map(dest => ({
-    ...dest,
-    voteCount: dest._count.votes,
-    hasVoted: voterId ? dest.votes.length > 0 : false,
-    // Remove the internal fields
-    votes: undefined,
-    _count: undefined,
-  }));
+    // Transform the response to include voteCount and hasVoted
+    const destinationsWithVotes = destinations.map(dest => ({
+      ...dest,
+      voteCount: dest._count.votes,
+      hasVoted: voterId ? dest.votes.length > 0 : false,
+      // Remove the internal fields
+      votes: undefined,
+      _count: undefined,
+    }));
 
-  return NextResponse.json(destinationsWithVotes);
+    return NextResponse.json(destinationsWithVotes);
+  } catch (error) {
+    // Fallback: If Vote table doesn't exist yet, return destinations without vote data
+    console.error("Error fetching with votes, falling back to simple query:", error);
+
+    const destinations = await prisma.destination.findMany({
+      orderBy: { createdAt: "desc" }
+    });
+
+    // Add default vote data
+    const destinationsWithDefaults = destinations.map(dest => ({
+      ...dest,
+      voteCount: 0,
+      hasVoted: false,
+    }));
+
+    return NextResponse.json(destinationsWithDefaults);
+  }
 }
 
 export async function POST(request: Request) {
