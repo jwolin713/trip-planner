@@ -26,6 +26,8 @@ type Destination = {
   bathrooms: number | null;
   voteCount: number;
   hasVoted: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type FormState = {
