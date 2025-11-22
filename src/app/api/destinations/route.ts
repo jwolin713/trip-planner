@@ -3,11 +3,34 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const voterId = searchParams.get("voterId");
+
   const destinations = await prisma.destination.findMany({
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    include: {
+      votes: voterId ? {
+        where: { voterId },
+        select: { id: true }
+      } : false,
+      _count: {
+        select: { votes: true }
+      }
+    }
   });
-  return NextResponse.json(destinations);
+
+  // Transform the response to include voteCount and hasVoted
+  const destinationsWithVotes = destinations.map(dest => ({
+    ...dest,
+    voteCount: dest._count.votes,
+    hasVoted: voterId ? dest.votes.length > 0 : false,
+    // Remove the internal fields
+    votes: undefined,
+    _count: undefined,
+  }));
+
+  return NextResponse.json(destinationsWithVotes);
 }
 
 export async function POST(request: Request) {
