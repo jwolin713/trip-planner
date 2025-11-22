@@ -24,8 +24,7 @@ model Destination {
   avgLowTempF              Float?
   weatherSummary           String?
 
-  nightlyCostTotalUsd      Float?
-  nightlyCostPerPersonUsd  Float?
+  priceRange               PriceRange?
 
   distanceFromHoustonMiles Float?
   flightDurationHours      Float?
@@ -51,4 +50,11 @@ model Vote {
 
   @@unique([destinationId, voterId])
   @@index([destinationId])
+}
+
+enum PriceRange {
+  BUDGET
+  MODERATE
+  EXPENSIVE
+  LUXURY
 }

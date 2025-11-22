@@ -67,8 +67,7 @@ export async function POST(request: Request) {
       avgHighTempF,
       avgLowTempF,
       weatherSummary,
-      nightlyCostTotalUsd,
-      nightlyCostPerPersonUsd,
+      priceRange,
       distanceFromHoustonMiles,
       flightDurationHours,
       distanceFromBostonMiles,
@@ -124,18 +123,7 @@ export async function POST(request: Request) {
             ? parseFloat(avgLowTempF)
             : null,
         weatherSummary: weatherSummary || null,
-        nightlyCostTotalUsd:
-          typeof nightlyCostTotalUsd === "number"
-            ? nightlyCostTotalUsd
-            : nightlyCostTotalUsd
-            ? parseFloat(nightlyCostTotalUsd)
-            : null,
-        nightlyCostPerPersonUsd:
-          typeof nightlyCostPerPersonUsd === "number"
-            ? nightlyCostPerPersonUsd
-            : nightlyCostPerPersonUsd
-            ? parseFloat(nightlyCostPerPersonUsd)
-            : null,
+        priceRange: priceRange || null,
         distanceFromHoustonMiles:
           typeof distanceFromHoustonMiles === "number"
             ? distanceFromHoustonMiles

@@ -16,8 +16,7 @@ type Destination = {
   avgHighTempF: number | null;
   avgLowTempF: number | null;
   weatherSummary: string | null;
-  nightlyCostTotalUsd: number | null;
-  nightlyCostPerPersonUsd: number | null;
+  priceRange: "BUDGET" | "MODERATE" | "EXPENSIVE" | "LUXURY" | null;
   distanceFromHoustonMiles: number | null;
   flightDurationHours: number | null;
   distanceFromBostonMiles: number | null;
@@ -43,8 +42,7 @@ type FormState = {
   avgHighTempF: string;
   avgLowTempF: string;
   weatherSummary: string;
-  nightlyCostTotalUsd: string;
-  nightlyCostPerPersonUsd: string;
+  priceRange: string;
   distanceFromHoustonMiles: string;
   flightDurationHours: string;
   distanceFromBostonMiles: string;
@@ -66,8 +64,7 @@ const defaultFormState: FormState = {
   avgHighTempF: "",
   avgLowTempF: "",
   weatherSummary: "",
-  nightlyCostTotalUsd: "",
-  nightlyCostPerPersonUsd: "",
+  priceRange: "",
   distanceFromHoustonMiles: "",
   flightDurationHours: "",
   distanceFromBostonMiles: "",
@@ -135,8 +132,7 @@ export default function HomePage() {
       avgHighTempF: destination.avgHighTempF?.toString() || "",
       avgLowTempF: destination.avgLowTempF?.toString() || "",
       weatherSummary: destination.weatherSummary || "",
-      nightlyCostTotalUsd: destination.nightlyCostTotalUsd?.toString() || "",
-      nightlyCostPerPersonUsd: destination.nightlyCostPerPersonUsd?.toString() || "",
+      priceRange: destination.priceRange || "",
       distanceFromHoustonMiles: destination.distanceFromHoustonMiles?.toString() || "",
       flightDurationHours: destination.flightDurationHours?.toString() || "",
       distanceFromBostonMiles: destination.distanceFromBostonMiles?.toString() || "",
@@ -513,25 +509,19 @@ export default function HomePage() {
               </div>
 
               <div className="form-field">
-                <label>Nightly cost total (USD)</label>
-                <input
-                  value={form.nightlyCostTotalUsd}
+                <label>Price Range</label>
+                <select
+                  value={form.priceRange}
                   onChange={(e) =>
-                    handleChange("nightlyCostTotalUsd", e.target.value)
+                    handleChange("priceRange", e.target.value)
                   }
-                  placeholder="e.g. 2000"
-                />
-              </div>
-
-              <div className="form-field">
-                <label>Nightly cost per person (USD)</label>
-                <input
-                  value={form.nightlyCostPerPersonUsd}
-                  onChange={(e) =>
-                    handleChange("nightlyCostPerPersonUsd", e.target.value)
-                  }
-                  placeholder="e.g. 130"
-                />
+                >
+                  <option value="">Select price tier...</option>
+                  <option value="BUDGET">$ - Budget (Under $100/person/night)</option>
+                  <option value="MODERATE">$$ - Moderate ($100-200/person/night)</option>
+                  <option value="EXPENSIVE">$$$ - Expensive ($200-350/person/night)</option>
+                  <option value="LUXURY">$$$$ - Luxury (Over $350/person/night)</option>
+                </select>
               </div>
 
               <div className="form-field">
@@ -707,13 +697,24 @@ function DestinationCard({
     notes,
     flightDurationHours,
     flightDurationFromBostonHours,
-    nightlyCostTotalUsd,
+    priceRange,
     airportCode,
     bedrooms,
     bathrooms,
     voteCount,
     hasVoted
   } = destination;
+
+  // Helper function to display price tier
+  const getPriceDisplay = (range: string | null) => {
+    switch (range) {
+      case "BUDGET": return "$";
+      case "MODERATE": return "$$";
+      case "EXPENSIVE": return "$$$";
+      case "LUXURY": return "$$$$";
+      default: return null;
+    }
+  };
 
   const typeLabel = type === "RESORT" ? "Resort" : "Airbnb / Vacation Rental";
 
@@ -817,9 +818,9 @@ function DestinationCard({
               {flightDurationFromBostonHours.toFixed(1)}h from Boston
             </span>
           )}
-          {nightlyCostTotalUsd != null && (
+          {priceRange && (
             <span className="badge">
-              ${nightlyCostTotalUsd.toFixed(0)}/night total
+              {getPriceDisplay(priceRange)}
             </span>
           )}
           {airportCode && (
@@ -834,6 +835,17 @@ function DestinationCard({
 }
 
 function ComparisonTable({ destinations, onVote }: { destinations: Destination[], onVote: (id: string) => void }) {
+  // Helper function to display price tier
+  const getPriceDisplay = (range: string | null) => {
+    switch (range) {
+      case "BUDGET": return "$";
+      case "MODERATE": return "$$";
+      case "EXPENSIVE": return "$$$";
+      case "LUXURY": return "$$$$";
+      default: return null;
+    }
+  };
+
   return (
     <div className="table-wrapper">
       <table className="comparison-table">
@@ -845,7 +857,7 @@ function ComparisonTable({ destinations, onVote }: { destinations: Destination[]
             <th>Capacity</th>
             <th>Airport / Distance</th>
             <th>Weather</th>
-            <th>Cost (nightly)</th>
+            <th>Price</th>
             <th>Travel Time</th>
           </tr>
         </thead>
@@ -914,15 +926,12 @@ function ComparisonTable({ destinations, onVote }: { destinations: Destination[]
                 )}
               </td>
               <td>
-                {d.nightlyCostTotalUsd != null && (
-                  <div>
-                    Total ${d.nightlyCostTotalUsd.toFixed(0)}
+                {d.priceRange ? (
+                  <div style={{ fontSize: "1.2rem", fontWeight: "600" }}>
+                    {getPriceDisplay(d.priceRange)}
                   </div>
-                )}
-                {d.nightlyCostPerPersonUsd != null && (
-                  <div style={{ color: "#6b7280" }}>
-                    ${d.nightlyCostPerPersonUsd.toFixed(0)} / person
-                  </div>
+                ) : (
+                  <span style={{ color: "#9ca3af" }}>—</span>
                 )}
               </td>
               <td>
