@@ -531,6 +531,7 @@ export default function HomePage() {
                   onChange={(e) =>
                     handleChange("priceRange", e.target.value)
                   }
+                  required
                 >
                   <option value="">Select price tier...</option>
                   <option value="BUDGET">$ - Budget (Under $100/person/night)</option>

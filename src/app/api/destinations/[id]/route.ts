@@ -48,6 +48,20 @@ export async function PUT(
       );
     }
 
+    if (!priceRange) {
+      return NextResponse.json(
+        { error: "Price range is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!["BUDGET", "MODERATE", "EXPENSIVE", "LUXURY"].includes(priceRange)) {
+      return NextResponse.json(
+        { error: "Invalid price range." },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.destination.update({
       where: { id },
       data: {

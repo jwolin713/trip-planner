@@ -92,6 +92,20 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!priceRange) {
+      return NextResponse.json(
+        { error: "Price range is required." },
+        { status: 400 }
+      );
+    }
+
+    if (!["BUDGET", "MODERATE", "EXPENSIVE", "LUXURY"].includes(priceRange)) {
+      return NextResponse.json(
+        { error: "Invalid price range." },
+        { status: 400 }
+      );
+    }
+
     const created = await prisma.destination.create({
       data: {
         name,
