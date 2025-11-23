@@ -24,7 +24,17 @@ type Destination = {
   bedrooms: number | null;
   bathrooms: number | null;
   voteCount: number;
+  commentCount: number;
   hasVoted: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Comment = {
+  id: string;
+  destinationId: string;
+  content: string;
+  authorName: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -84,6 +94,8 @@ export default function HomePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [voterId, setVoterId] = useState<string>("");
   const [sortBy, setSortBy] = useState<"recent" | "votes" | "name">("recent");
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState<boolean>(false);
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
 
   async function fetchDestinations() {
     setLoading(true);
@@ -306,6 +318,16 @@ export default function HomePage() {
       // Revert optimistic update on error
       await fetchDestinations();
     }
+  }
+
+  function handleOpenComments(destinationId: string) {
+    setSelectedDestinationId(destinationId);
+    setIsCommentsModalOpen(true);
+  }
+
+  function handleCloseComments() {
+    setIsCommentsModalOpen(false);
+    setSelectedDestinationId(null);
   }
 
   // Sort destinations based on selected option
@@ -656,6 +678,7 @@ export default function HomePage() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onVote={handleVote}
+                    onOpenComments={handleOpenComments}
                   />
                 ))}
               </div>
@@ -670,10 +693,20 @@ export default function HomePage() {
                   Scan costs, distance, and weather for all options.
                 </span>
               </div>
-              <ComparisonTable destinations={sortedDestinations} onVote={handleVote} />
+              <ComparisonTable destinations={sortedDestinations} onVote={handleVote} onOpenComments={handleOpenComments} />
             </div>
           )}
       </section>
+
+      {/* Comments Modal */}
+      {isCommentsModalOpen && selectedDestinationId && (
+        <CommentsModal
+          destinationId={selectedDestinationId}
+          destinationName={destinations.find(d => d.id === selectedDestinationId)?.name || ""}
+          onClose={handleCloseComments}
+          onCommentAdded={fetchDestinations}
+        />
+      )}
     </div>
   );
 }
@@ -682,12 +715,14 @@ function DestinationCard({
   destination,
   onEdit,
   onDelete,
-  onVote
+  onVote,
+  onOpenComments
 }: {
   destination: Destination;
   onEdit: (destination: Destination) => void;
   onDelete: (id: string) => void;
   onVote: (id: string) => void;
+  onOpenComments: (id: string) => void;
 }) {
   const {
     name,
@@ -702,6 +737,7 @@ function DestinationCard({
     bedrooms,
     bathrooms,
     voteCount,
+    commentCount,
     hasVoted
   } = destination;
 
@@ -765,6 +801,28 @@ function DestinationCard({
           >
             <span style={{ fontSize: "1rem" }}>⬆</span>
             <span>{voteCount} {voteCount === 1 ? "vote" : "votes"}</span>
+          </button>
+        </div>
+
+        {/* Comments button */}
+        <div style={{ marginBottom: 8 }}>
+          <button
+            onClick={() => onOpenComments(destination.id)}
+            style={{
+              padding: "6px 12px",
+              fontSize: "0.85rem",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              background: "white",
+              color: "#6b7280",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>💬</span>
+            <span>{commentCount} {commentCount === 1 ? "comment" : "comments"}</span>
           </button>
         </div>
 
@@ -834,7 +892,7 @@ function DestinationCard({
   );
 }
 
-function ComparisonTable({ destinations, onVote }: { destinations: Destination[], onVote: (id: string) => void }) {
+function ComparisonTable({ destinations, onVote, onOpenComments }: { destinations: Destination[], onVote: (id: string) => void, onOpenComments: (id: string) => void }) {
   // Helper function to display price tier
   const getPriceDisplay = (range: string | null) => {
     switch (range) {
@@ -852,6 +910,7 @@ function ComparisonTable({ destinations, onVote }: { destinations: Destination[]
         <thead>
           <tr>
             <th>Votes</th>
+            <th>Comments</th>
             <th>Destination</th>
             <th>Type</th>
             <th>Capacity</th>
@@ -881,6 +940,23 @@ function ComparisonTable({ destinations, onVote }: { destinations: Destination[]
                   aria-label={d.hasVoted ? "Remove vote" : "Vote for this destination"}
                 >
                   ⬆ {d.voteCount}
+                </button>
+              </td>
+              <td>
+                <button
+                  onClick={() => onOpenComments(d.id)}
+                  style={{
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    borderRadius: "4px",
+                    border: "1px solid #d1d5db",
+                    background: "white",
+                    color: "#6b7280",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  💬 {d.commentCount}
                 </button>
               </td>
               <td>{d.name}</td>
@@ -956,6 +1032,394 @@ function ComparisonTable({ destinations, onVote }: { destinations: Destination[]
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function CommentsModal({
+  destinationId,
+  destinationName,
+  onClose,
+  onCommentAdded
+}: {
+  destinationId: string;
+  destinationName: string;
+  onClose: () => void;
+  onCommentAdded: () => void;
+}) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [newCommentContent, setNewCommentContent] = useState<string>("");
+  const [authorName, setAuthorName] = useState<string>("");
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>("");
+
+  useEffect(() => {
+    // Load author name from localStorage
+    const savedName = localStorage.getItem("commenterName");
+    if (savedName) {
+      setAuthorName(savedName);
+    }
+
+    // Fetch comments
+    fetchComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchComments() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/destinations/${destinationId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch comments:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmitComment(e: FormEvent) {
+    e.preventDefault();
+
+    if (!newCommentContent.trim() || !authorName.trim()) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/destinations/${destinationId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: newCommentContent.trim(),
+          authorName: authorName.trim()
+        })
+      });
+
+      if (res.ok) {
+        // Save author name to localStorage
+        localStorage.setItem("commenterName", authorName.trim());
+
+        // Refresh comments
+        await fetchComments();
+        setNewCommentContent("");
+
+        // Notify parent to refresh destination counts
+        onCommentAdded();
+      } else {
+        console.error("Failed to post comment");
+      }
+    } catch (err) {
+      console.error("Error posting comment:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleEditComment(commentId: string) {
+    if (!editContent.trim()) return;
+
+    try {
+      const res = await fetch(`/api/destinations/${destinationId}/comments/${commentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: editContent.trim(),
+          authorName
+        })
+      });
+
+      if (res.ok) {
+        await fetchComments();
+        setEditingCommentId(null);
+        setEditContent("");
+      } else {
+        console.error("Failed to edit comment");
+      }
+    } catch (err) {
+      console.error("Error editing comment:", err);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    if (!confirm("Are you sure you want to delete this comment?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/destinations/${destinationId}/comments/${commentId}?authorName=${encodeURIComponent(authorName)}`,
+        { method: "DELETE" }
+      );
+
+      if (res.ok) {
+        await fetchComments();
+        onCommentAdded(); // Refresh counts
+      } else {
+        console.error("Failed to delete comment");
+      }
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+        padding: "20px"
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          maxWidth: "600px",
+          width: "100%",
+          maxHeight: "80vh",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)"
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "20px",
+            borderBottom: "1px solid #e5e7eb",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
+            Comments: {destinationName}
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              border: "none",
+              background: "transparent",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              color: "#6b7280"
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Comments list */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "20px"
+          }}
+        >
+          {loading ? (
+            <p style={{ color: "#6b7280" }}>Loading comments...</p>
+          ) : comments.length === 0 ? (
+            <p style={{ color: "#6b7280" }}>No comments yet. Be the first to comment!</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  style={{
+                    padding: "12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px"
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "8px"
+                    }}
+                  >
+                    <strong style={{ fontSize: "0.9rem" }}>{comment.authorName}</strong>
+                    <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {editingCommentId === comment.id ? (
+                    <div>
+                      <textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "4px",
+                          resize: "vertical",
+                          minHeight: "60px",
+                          marginBottom: "8px"
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          onClick={() => handleEditComment(comment.id)}
+                          style={{
+                            padding: "4px 12px",
+                            fontSize: "0.8rem",
+                            borderRadius: "4px",
+                            border: "1px solid #2563eb",
+                            background: "#2563eb",
+                            color: "white",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingCommentId(null);
+                            setEditContent("");
+                          }}
+                          style={{
+                            padding: "4px 12px",
+                            fontSize: "0.8rem",
+                            borderRadius: "4px",
+                            border: "1px solid #d1d5db",
+                            background: "white",
+                            color: "#6b7280",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p style={{ margin: "0 0 8px 0", fontSize: "0.9rem" }}>
+                        {comment.content}
+                      </p>
+                      {comment.authorName === authorName && (
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            onClick={() => {
+                              setEditingCommentId(comment.id);
+                              setEditContent(comment.content);
+                            }}
+                            style={{
+                              padding: "2px 8px",
+                              fontSize: "0.75rem",
+                              borderRadius: "4px",
+                              border: "1px solid #d1d5db",
+                              background: "white",
+                              color: "#6b7280",
+                              cursor: "pointer"
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            style={{
+                              padding: "2px 8px",
+                              fontSize: "0.75rem",
+                              borderRadius: "4px",
+                              border: "1px solid #dc2626",
+                              background: "white",
+                              color: "#dc2626",
+                              cursor: "pointer"
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* New comment form */}
+        <div
+          style={{
+            padding: "20px",
+            borderTop: "1px solid #e5e7eb"
+          }}
+        >
+          <form onSubmit={handleSubmitComment}>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.9rem", fontWeight: "500" }}>
+                Your Name
+              </label>
+              <input
+                type="text"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                required
+                placeholder="Enter your name"
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px"
+                }}
+              />
+            </div>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.9rem", fontWeight: "500" }}>
+                Comment
+              </label>
+              <textarea
+                value={newCommentContent}
+                onChange={(e) => setNewCommentContent(e.target.value)}
+                required
+                placeholder="Write your comment..."
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "4px",
+                  resize: "vertical",
+                  minHeight: "80px"
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={submitting || !newCommentContent.trim() || !authorName.trim()}
+              style={{
+                padding: "8px 16px",
+                fontSize: "0.9rem",
+                borderRadius: "6px",
+                border: "none",
+                background: submitting || !newCommentContent.trim() || !authorName.trim() ? "#d1d5db" : "#2563eb",
+                color: "white",
+                cursor: submitting || !newCommentContent.trim() || !authorName.trim() ? "not-allowed" : "pointer"
+              }}
+            >
+              {submitting ? "Posting..." : "Post Comment"}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

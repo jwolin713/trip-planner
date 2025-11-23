@@ -36,6 +36,7 @@ model Destination {
   bathrooms                Int?
 
   votes                    Vote[]
+  comments                 Comment[]
 
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
@@ -49,6 +50,18 @@ model Vote {
   createdAt     DateTime    @default(now())
 
   @@unique([destinationId, voterId])
+  @@index([destinationId])
+}
+
+model Comment {
+  id            String      @id @default(cuid())
+  destinationId String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  content       String
+  authorName    String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
   @@index([destinationId])
 }
 

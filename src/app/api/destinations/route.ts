@@ -16,15 +16,16 @@ export async function GET(request: Request) {
           select: { id: true }
         } : false,
         _count: {
-          select: { votes: true }
+          select: { votes: true, comments: true }
         }
       }
     });
 
-    // Transform the response to include voteCount and hasVoted
+    // Transform the response to include voteCount, commentCount, and hasVoted
     const destinationsWithVotes = destinations.map(dest => ({
       ...dest,
       voteCount: dest._count.votes,
+      commentCount: dest._count.comments,
       hasVoted: voterId ? dest.votes.length > 0 : false,
       // Remove the internal fields
       votes: undefined,
@@ -40,10 +41,11 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" }
     });
 
-    // Add default vote data
+    // Add default vote and comment data
     const destinationsWithDefaults = destinations.map(dest => ({
       ...dest,
       voteCount: 0,
+      commentCount: 0,
       hasVoted: false,
     }));
 
