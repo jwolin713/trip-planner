@@ -19,8 +19,7 @@ async function main() {
         avgHighTempF: 90,
         avgLowTempF: 77,
         weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
-        nightlyCostTotalUsd: 2500,
-        nightlyCostPerPersonUsd: 170,
+        priceRange: "MODERATE",
         distanceFromHoustonMiles: 810,
         flightDurationHours: 2.1
       },
@@ -36,8 +35,7 @@ async function main() {
         avgHighTempF: 98,
         avgLowTempF: 75,
         weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
-        nightlyCostTotalUsd: 1200,
-        nightlyCostPerPersonUsd: 80,
+        priceRange: "BUDGET",
         distanceFromHoustonMiles: 170,
         flightDurationHours: 0 // driving
       }
