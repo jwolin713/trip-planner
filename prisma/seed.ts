@@ -21,7 +21,9 @@ async function main() {
         weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
         priceRange: "MODERATE",
         distanceFromHoustonMiles: 810,
-        flightDurationHours: 2.1
+        flightDurationHours: 2.1,
+        distanceFromBostonMiles: 1550,
+        flightDurationFromBostonHours: 4.2
       },
       {
         name: "Hill Country Ranch House",
@@ -37,7 +39,63 @@ async function main() {
         weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
         priceRange: "BUDGET",
         distanceFromHoustonMiles: 170,
-        flightDurationHours: 0 // driving
+        flightDurationHours: 0, // driving
+        distanceFromBostonMiles: 1765,
+        flightDurationFromBostonHours: 4.5
+      },
+      {
+        name: "Kiawah Island",
+        type: "RESORT",
+        imageUrl: "https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg",
+        propertyUrl: null,
+        notes: "Luxury beach resort with world-class golf courses and pristine beaches.",
+        airportCode: "CHS",
+        distanceFromAirportMiles: 28,
+        driveTimeFromAirportMin: 40,
+        avgHighTempF: 88,
+        avgLowTempF: 76,
+        weatherSummary: "Warm and pleasant in early August, ideal for outdoor activities.",
+        priceRange: "LUXURY",
+        distanceFromHoustonMiles: 920,
+        flightDurationHours: 2.4,
+        distanceFromBostonMiles: 840,
+        flightDurationFromBostonHours: 2.3
+      },
+      {
+        name: "Riviera Maya",
+        type: "RESORT",
+        imageUrl: "https://images.pexels.com/photos/2166559/pexels-photo-2166559.jpeg",
+        propertyUrl: null,
+        notes: "Beautiful Caribbean beaches, Mayan ruins, and all-inclusive resorts.",
+        airportCode: "CUN",
+        distanceFromAirportMiles: 35,
+        driveTimeFromAirportMin: 50,
+        avgHighTempF: 91,
+        avgLowTempF: 78,
+        weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
+        priceRange: "EXPENSIVE",
+        distanceFromHoustonMiles: 850,
+        flightDurationHours: 2.2,
+        distanceFromBostonMiles: 1600,
+        flightDurationFromBostonHours: 4.3
+      },
+      {
+        name: "Palm Springs",
+        type: "VACATION_RENTAL",
+        imageUrl: "https://images.pexels.com/photos/1268871/pexels-photo-1268871.jpeg",
+        propertyUrl: null,
+        notes: "Desert oasis with mid-century modern style, pools, and mountain views.",
+        airportCode: "PSP",
+        distanceFromAirportMiles: 5,
+        driveTimeFromAirportMin: 15,
+        avgHighTempF: 107,
+        avgLowTempF: 82,
+        weatherSummary: "Hot and sunny in early August, typical of warm climate destinations.",
+        priceRange: "EXPENSIVE",
+        distanceFromHoustonMiles: 1370,
+        flightDurationHours: 3.4,
+        distanceFromBostonMiles: 2600,
+        flightDurationFromBostonHours: 6.2
       }
     ]
   });

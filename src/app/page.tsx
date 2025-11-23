@@ -336,7 +336,7 @@ export default function HomePage() {
       <header className="app-header">
         <h1>Coalition Con 2026 Destinations</h1>
         <p>
-          Add ideas, see them as cards, and compare tradeoffs side by side for our group of 15.
+          Add ideas, see them as cards, and compare tradeoffs side by side for the event of the year.
         </p>
       </header>
 
