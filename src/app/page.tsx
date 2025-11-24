@@ -17,6 +17,7 @@ type Destination = {
   avgLowTempF: number | null;
   weatherSummary: string | null;
   priceRange: "BUDGET" | "MODERATE" | "EXPENSIVE" | "LUXURY" | null;
+  isAllInclusive: boolean | null;
   distanceFromHoustonMiles: number | null;
   flightDurationHours: number | null;
   distanceFromBostonMiles: number | null;
@@ -53,6 +54,7 @@ type FormState = {
   avgLowTempF: string;
   weatherSummary: string;
   priceRange: string;
+  isAllInclusive: string;
   distanceFromHoustonMiles: string;
   flightDurationHours: string;
   distanceFromBostonMiles: string;
@@ -73,6 +75,7 @@ const defaultFormState: FormState = {
   avgLowTempF: "",
   weatherSummary: "",
   priceRange: "",
+  isAllInclusive: "",
   distanceFromHoustonMiles: "",
   flightDurationHours: "",
   distanceFromBostonMiles: "",
@@ -141,6 +144,7 @@ export default function HomePage() {
       avgLowTempF: destination.avgLowTempF?.toString() || "",
       weatherSummary: destination.weatherSummary || "",
       priceRange: destination.priceRange || "",
+      isAllInclusive: destination.isAllInclusive === null ? "" : destination.isAllInclusive ? "true" : "false",
       distanceFromHoustonMiles: destination.distanceFromHoustonMiles?.toString() || "",
       flightDurationHours: destination.flightDurationHours?.toString() || "",
       distanceFromBostonMiles: destination.distanceFromBostonMiles?.toString() || "",
@@ -235,12 +239,18 @@ export default function HomePage() {
         : "/api/destinations";
       const method = editingId ? "PUT" : "POST";
 
+      // Convert isAllInclusive from string to boolean
+      const payload = {
+        ...form,
+        isAllInclusive: form.isAllInclusive === "true" ? true : form.isAllInclusive === "false" ? false : null
+      };
+
       const res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
@@ -409,6 +419,37 @@ export default function HomePage() {
                 </select>
               </div>
 
+              <div className="form-field">
+                <label>Price Range *</label>
+                <select
+                  value={form.priceRange}
+                  onChange={(e) =>
+                    handleChange("priceRange", e.target.value)
+                  }
+                  required
+                >
+                  <option value="">Select price tier...</option>
+                  <option value="BUDGET">$ - Budget (Under $100/person/night)</option>
+                  <option value="MODERATE">$$ - Moderate ($100-200/person/night)</option>
+                  <option value="EXPENSIVE">$$$ - Expensive ($200-350/person/night)</option>
+                  <option value="LUXURY">$$$$ - Luxury (Over $350/person/night)</option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>All-Inclusive?</label>
+                <select
+                  value={form.isAllInclusive}
+                  onChange={(e) =>
+                    handleChange("isAllInclusive", e.target.value)
+                  }
+                >
+                  <option value="">Select...</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+
               <div className="form-field" style={{ gridColumn: "1 / -1" }}>
                 <label>Address or Location</label>
                 <div style={{ display: "flex", gap: "8px" }}>
@@ -522,23 +563,6 @@ export default function HomePage() {
                   }
                   placeholder="Warm, humid, chance of afternoon storms."
                 />
-              </div>
-
-              <div className="form-field">
-                <label>Price Range</label>
-                <select
-                  value={form.priceRange}
-                  onChange={(e) =>
-                    handleChange("priceRange", e.target.value)
-                  }
-                  required
-                >
-                  <option value="">Select price tier...</option>
-                  <option value="BUDGET">$ - Budget (Under $100/person/night)</option>
-                  <option value="MODERATE">$$ - Moderate ($100-200/person/night)</option>
-                  <option value="EXPENSIVE">$$$ - Expensive ($200-350/person/night)</option>
-                  <option value="LUXURY">$$$$ - Luxury (Over $350/person/night)</option>
-                </select>
               </div>
 
               <div className="form-field">
@@ -704,6 +728,7 @@ function DestinationCard({
     flightDurationHours,
     flightDurationFromBostonHours,
     priceRange,
+    isAllInclusive,
     airportCode,
     distanceFromAirportMiles,
     driveTimeFromAirportMin,
@@ -852,6 +877,11 @@ function DestinationCard({
               {getPriceDisplay(priceRange)}
             </span>
           )}
+          {isAllInclusive === true && (
+            <span className="badge">
+              All-Inclusive
+            </span>
+          )}
           {airportCode && (
             <span className="badge">
               Airport: {airportCode.toUpperCase()}
@@ -887,6 +917,7 @@ function ComparisonTable({ destinations, onVote, onOpenComments }: { destination
             <th>Airport / Distance</th>
             <th>Weather</th>
             <th>Price</th>
+            <th>All-Inclusive</th>
             <th>Travel Time</th>
           </tr>
         </thead>
@@ -965,6 +996,15 @@ function ComparisonTable({ destinations, onVote, onOpenComments }: { destination
                   <div style={{ fontSize: "1.2rem", fontWeight: "600" }}>
                     {getPriceDisplay(d.priceRange)}
                   </div>
+                ) : (
+                  <span style={{ color: "#9ca3af" }}>—</span>
+                )}
+              </td>
+              <td>
+                {d.isAllInclusive === true ? (
+                  <div>Yes</div>
+                ) : d.isAllInclusive === false ? (
+                  <div>No</div>
                 ) : (
                   <span style={{ color: "#9ca3af" }}>—</span>
                 )}

@@ -26,6 +26,7 @@ export async function PUT(
       avgLowTempF,
       weatherSummary,
       priceRange,
+      isAllInclusive,
       distanceFromHoustonMiles,
       flightDurationHours,
       distanceFromBostonMiles,
@@ -97,6 +98,7 @@ export async function PUT(
             : null,
         weatherSummary: weatherSummary || null,
         priceRange: priceRange || null,
+        isAllInclusive: typeof isAllInclusive === "boolean" ? isAllInclusive : null,
         distanceFromHoustonMiles:
           typeof distanceFromHoustonMiles === "number"
             ? distanceFromHoustonMiles

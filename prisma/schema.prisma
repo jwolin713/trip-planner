@@ -25,6 +25,7 @@ model Destination {
   weatherSummary           String?
 
   priceRange               PriceRange?
+  isAllInclusive           Boolean?
 
   distanceFromHoustonMiles Float?
   flightDurationHours      Float?

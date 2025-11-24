@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       avgLowTempF,
       weatherSummary,
       priceRange,
+      isAllInclusive,
       distanceFromHoustonMiles,
       flightDurationHours,
       distanceFromBostonMiles,
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
             : null,
         weatherSummary: weatherSummary || null,
         priceRange: priceRange || null,
+        isAllInclusive: typeof isAllInclusive === "boolean" ? isAllInclusive : null,
         distanceFromHoustonMiles:
           typeof distanceFromHoustonMiles === "number"
             ? distanceFromHoustonMiles
