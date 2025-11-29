@@ -724,7 +724,6 @@ function DestinationCard({
     type,
     imageUrl,
     propertyUrl,
-    notes,
     flightDurationHours,
     flightDurationFromBostonHours,
     priceRange,
@@ -773,8 +772,6 @@ function DestinationCard({
             </a>
           )}
         </div>
-        {notes && <p className="destination-notes">{notes}</p>}
-
         {/* Vote button */}
         <div style={{ marginTop: 8, marginBottom: 8 }}>
           <button
@@ -913,6 +910,7 @@ function ComparisonTable({ destinations, onVote, onOpenComments }: { destination
             <th>Votes</th>
             <th>Comments</th>
             <th>Destination</th>
+            <th>Notes</th>
             <th>Type</th>
             <th>Airport / Distance</th>
             <th>Weather</th>
@@ -961,6 +959,13 @@ function ComparisonTable({ destinations, onVote, onOpenComments }: { destination
                 </button>
               </td>
               <td>{d.name}</td>
+              <td>
+                {d.notes ? (
+                  <span style={{ color: "#374151" }}>{d.notes}</span>
+                ) : (
+                  <span style={{ color: "#9ca3af" }}>—</span>
+                )}
+              </td>
               <td>{d.type === "RESORT" ? "Resort" : "Vacation rental"}</td>
               <td>
                 {d.airportCode && <div>{d.airportCode.toUpperCase()}</div>}
